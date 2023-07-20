@@ -1,0 +1,52 @@
+//串口+fifo模块，fifo的数据输出线din连接串口的
+//需控制ready高才能读fifo
+//若无loop模块需补充控制uart的busy、uart_en线
+module tx_top(
+    input           sys_clk,            //外部50M时钟
+    input           sys_rst_n,          //外部复位信号，低有效
+    input	[7:0]      dout       ,  //数据输入
+    input             ready      ,  //fifo准备位
+    input            wrreq,
+    output  uart_txd,            //接口
+    output  uart_tx_busy,     //loopmodel需要
+    output  wr_water_level,   //control_fifo的output
+    output   almost_full,     //control_fifo 的output
+    output   almost_empty,   //control_fifo 的output
+    output    full,                  //control_fifo 的output
+    output     empty,             //control_fifo 的output
+    output  reg     uart_en        //loppmodel需要，且只要en拉高串口即开始工作
+);
+
+wire din;
+always uart_en <=1;
+
+//parameter define
+parameter  CLK_FREQ = 50000000;         //定义系统时钟频率
+parameter  UART_BPS = 115200;   
+uart_send u_uart_send(                 
+    .sys_clk        (sys_clk),
+    .sys_rst_n      (sys_rst_n),
+     
+    .uart_en        (uart_en),
+    .uart_din       (din),
+    .uart_tx_busy   (uart_tx_busy),
+    .uart_txd       (uart_txd)
+    );
+
+
+control_fifo1 control_fifo1(
+    .clk            ( sys_clk )  ,
+    .rst_n          (sys_rst_n )  ,
+    .dout           (dout   )  ,
+    .ready          (ready)  ,
+    .wrreq         (wrreq),
+    .empty          (empty  )  ,
+    .full           (full   )  ,
+    .almost_empty         (usedw  ),
+    .almost_full         (almost_full),
+    .wr_water_level     (wr_water_level),
+    .din           (din  ) 
+   );
+
+
+endmodule

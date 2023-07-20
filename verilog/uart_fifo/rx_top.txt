@@ -1,0 +1,54 @@
+//串口+fifo模块，串口数据接收线与fifo数据输入线相连
+//需控制wrreq高才能读fifo
+//若无loop模块需补充控制uart的uart_done线
+module rx_top (
+    input   	        sys_clk        ,
+    input            sys_rst_n,                //系统复位，低电平有效
+    input            uart_rxd,
+    input               ready      , //control_en_ready
+    input            wrreq,
+    output           uart_done,
+    output  [255:0]       din        ,      //fifo数据输出线
+    output	  [10:0] wr_water_level,
+    output       empty,
+    output	      almost_empty,
+    output      full,
+    output      almost_full        
+);
+wire [7:0] data;
+wire [255:0] uart_data;   //data和fifo的dout连，256位？
+assign data =uart_data;
+
+
+//parameter define
+parameter  CLK_FREQ = 50000000;         //定义系统时钟频率
+parameter  UART_BPS = 115200;           //定义串口波特率
+uart_recv #(                          
+    .CLK_FREQ       (CLK_FREQ),         //设置系统时钟频率
+    .UART_BPS       (UART_BPS))         //设置串口接收波特率
+u_uart_recv(       
+    .sys_clk(sys_clk ),                  //系统时钟
+    .sys_rst_n      (sys_rst_n),
+    .uart_rxd(uart_rxd),
+     .uart_done      (uart_done),
+    .uart_data       (uart_data)
+);
+
+
+assign data = uart_data;
+control_fifo1 control_fifo1(
+    .clk            ( sys_clk )  ,
+    .rst_n          (sys_rst_n )  ,
+    .ready          (rdreq  )  ,
+    .wrreq          (wrreq  )  ,
+    .dout           (data   )  ,
+    .ready          (ready)  ,
+    .din           (din  )  ,
+    .empty          (empty  )  ,
+    .wr_water_level     (wr_water_level),
+    .full           (full),
+
+    .almost_empty         (usedw  ),
+    .almost_full         (almost_full)
+);
+endmodule 
